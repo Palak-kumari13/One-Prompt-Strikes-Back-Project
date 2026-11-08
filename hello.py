@@ -1,0 +1,6 @@
+
+print("Hello world!")
+
+# DO NOT TOUCH!!
+
+# TRAINING IN PROGRESS. DO NOT INTERRUPT.
