@@ -143,3 +143,155 @@ If you find our work or this codebase helpful, please consider citing:
   year={2025}
 }
 ```
+
+
+---
+
+## Research Extensions: Task 1 and Task 2
+
+This repository also contains two experimental extensions of the
+original SMoPE framework for prompt-based continual learning.
+
+Both extensions use the shared SMoPE training pipeline.
+
+### Task 1: Expert-Choice Prompt Routing
+
+**Research question:** Can expert-choice routing improve expert
+utilization and continual-learning performance compared with the
+original input-wise Top-K routing?
+
+The original SMoPE router allows each input to select its
+preferred Top-K prompt experts. The expert-choice extension
+instead allows each expert to select inputs subject to a capacity
+constraint.
+
+Implementation:
+- `task1.py`: score extraction and routing comparison
+- `models/vit.py`: expert-choice routing implementation
+- `experiments/cifar-100_ec.sh`: training launcher
+- `run.py`: shared training entry point
+
+The routing mode is controlled using `SMOPE_ROUTING`, and capacity
+can be adjusted using `SMOPE_CAPACITY`.
+
+#### Train Task 1
+
+Run from the repository root in a Bash-compatible environment:
+
+```bash
+bash experiments/cifar-100_ec.sh
+```
+
+The current script saves Task 1 runs under:
+
+`task1/cifar-100/10-task/one-prompt-ec`
+
+#### Evaluate Task 1
+
+After generating baseline and expert-choice checkpoints:
+
+```bash
+python task1.py compare \
+  --log_dir_topk outputs/cifar-100/10-task/one-prompt \
+  --log_dir_ec task1/cifar-100/10-task/one-prompt-ec
+```
+
+The comparison reports:
+- Final Average Accuracy (FAA)
+- Continual Average Accuracy (CAA)
+- Expert activation frequency and load balance
+- Zero-expert input fraction
+- Estimated prompt computation cost
+
+The comparison requires the full trained-run directories,
+including their checkpoints and configuration files.
+
+### Task 2: Orthogonal Prompt Expert Specialization
+
+**Research question:** Does encouraging different prompt experts
+to learn distinct representation directions improve specialization
+without reducing continual-learning performance?
+
+Task 2 introduces a cosine-similarity-based regularization
+term for prefix keys from different prompt experts.
+
+The regularization strength is controlled by an additional
+value in `--prompt_param`.
+
+Implementation:
+- `task2.py`: orthogonality evaluation and visualization
+- `experiments/cifar-100_orth.sh`: training launcher
+- Shared SMoPE model and training pipeline
+
+#### Train Task 2
+
+```bash
+bash experiments/cifar-100_orth.sh
+```
+
+The current script evaluates regularization strengths:
+`0.1`, `0.001`, `1`, and `10`.
+
+Results are generated under:
+
+`task2/cifar-100/10-task/`
+
+#### Evaluate Task 2
+
+After completing the baseline and orthogonality runs:
+
+```bash
+python task2.py \
+  --runs \
+  outputs/cifar-100/10-task/one-prompt \
+  task2/cifar-100/10-task/one-prompt-orth-0.001 \
+  task2/cifar-100/10-task/one-prompt-orth-0.1 \
+  task2/cifar-100/10-task/one-prompt-orth-1 \
+  task2/cifar-100/10-task/one-prompt-orth-10 \
+  --names original 0.001 0.1 1 10
+```
+
+The evaluation reports:
+- FAA and CAA
+- Mean absolute pairwise prefix-key cosine similarity
+- Maximum pairwise cosine similarity
+- Expert activation balance
+- Prefix-key similarity and activation-frequency visualizations
+
+The required checkpoints must be available locally.
+
+### Experimental Results
+
+Small result artifacts committed to the repository are organized
+under `results/`:
+
+| Directory | Contents |
+|---|---|
+| `results/accuracy/` | Accuracy summaries |
+| `results/fr/` | Forgetting-related summaries |
+| `results/timing/` | Timing summaries |
+| `results/logs/` | Experiment logs |
+| `results/results.xlsx` | Results workbook |
+
+These shared summaries are not automatically attributable to
+Task 1 or Task 2 without matching their source runs.
+
+### Checkpoints and Reproducibility
+
+Large model checkpoints are stored locally and are not included
+in the repository. The full checkpoints are necessary for
+checkpoint-based evaluation and reproduction of the corresponding
+figures.
+
+The training scripts specify their respective configurations,
+random seeds, batch sizes, and output directories.
+
+The baseline CIFAR-100 launcher currently uses 20 correction
+epochs, whereas the Task 1 and Task 2 launchers use 50.
+Controlled comparisons should account for this difference.
+
+### Research Status
+
+The implementation and evaluation entry points are provided.
+Numerical comparisons should be reported only after the corresponding
+experiment outputs have been verified.
